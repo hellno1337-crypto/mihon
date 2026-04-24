@@ -3,7 +3,7 @@ name: Build & Release NHentai Extension
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:   # allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,8 +19,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install Android platform & build tools
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -34,22 +37,20 @@ jobs:
       - name: Download Gradle wrapper jar
         run: |
           mkdir -p gradle/wrapper
-          curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar"
+          curl -fL -o gradle/wrapper/gradle-wrapper.jar \
+            "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar"
           chmod +x ./gradlew
 
-      # Generate a placeholder icon so the build doesn't fail on missing resources
       - name: Generate placeholder icon
         run: |
           sudo apt-get install -y imagemagick
-          for size in 48 72 96 108 144 192; do
-            case $size in
-              48)  density="mdpi";;
-              72)  density="hdpi";;
-              96)  density="xhdpi";;
-              108) density="xhdpi";;    # adaptive icon
-              144) density="xxhdpi";;
-              192) density="xxxhdpi";;
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            case $density in
+              mdpi)    size=48;;
+              hdpi)    size=72;;
+              xhdpi)   size=96;;
+              xxhdpi)  size=144;;
+              xxxhdpi) size=192;;
             esac
             mkdir -p src/en/nhentai/src/main/res/mipmap-${density}
             convert -size ${size}x${size} xc:'#1a1a2e' \
@@ -59,7 +60,9 @@ jobs:
           done
 
       - name: Build debug APK
-        run: ./gradlew :src:en:nhentai:assembleDebug --stacktrace
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+        run: ./gradlew :src:en:nhentai:assembleDebug --stacktrace --info 2>&1 | tail -100
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -68,7 +71,6 @@ jobs:
           path: src/en/nhentai/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      # Also create a GitHub Release so you get a permanent download link
       - name: Get version code
         id: version
         run: echo "code=$(grep extVersionCode src/en/nhentai/build.gradle | grep -oP '\d+')" >> $GITHUB_OUTPUT
@@ -86,8 +88,7 @@ jobs:
             2. Open it on your phone (enable "Install unknown apps" for your browser/files app)
             3. Open Mihon → Browse → Extensions → tap **NHentai**
 
-            > ⚠️ NSFW content — enable NSFW extensions in Mihon settings first:
-            > Mihon → Settings → Browse → Show NSFW sources
+            > Enable NSFW sources first: Mihon → Settings → Browse → Show NSFW sources
           files: src/en/nhentai/build/outputs/apk/debug/*.apk
           make_latest: true
         env:
