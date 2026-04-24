@@ -42,6 +42,17 @@ jobs:
         with:
           gradle-version: '8.4'
 
+      - name: Pre-warm JitPack (extensions-lib)
+        run: |
+          # Trigger JitPack to build the artifact if not already cached
+          STATUS=$(curl -sL -o /dev/null -w "%{http_code}" \
+            "https://jitpack.io/com/github/mihonapp/extensions-lib/1.6.0-rc1/extensions-lib-1.6.0-rc1.pom")
+          echo "JitPack status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Waiting for JitPack to build extensions-lib..."
+            sleep 30
+          fi
+
       - name: Generate placeholder icon
         run: |
           sudo apt-get install -y imagemagick
