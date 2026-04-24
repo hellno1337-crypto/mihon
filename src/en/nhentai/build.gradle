@@ -1,5 +1,4 @@
-apply from: "$rootDir/common.gradle"
-
+// Properties MUST be defined before common.gradle reads them
 ext {
     extName       = 'NHentai'
     pkgNameSuffix = 'en.nhentai'
@@ -7,3 +6,5 @@ ext {
     extVersionCode = 1
     isNsfw        = true
 }
+
+apply from: "$rootDir/common.gradle"
