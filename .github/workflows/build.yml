@@ -72,18 +72,27 @@ jobs:
               src/en/nhentai/src/main/res/mipmap-${density}/ic_launcher.png
           done
 
-      - name: Generate signing keystore
+      - name: Restore signing keystore from cache
+        id: keystore-cache
+        uses: actions/cache@v4
+        with:
+          path: signing/nhentai.keystore
+          key: nhentai-signing-keystore-stable-v1
+
+      - name: Generate signing keystore if not cached
+        if: steps.keystore-cache.outputs.cache-hit != 'true'
         run: |
+          mkdir -p signing
           keytool -genkey -v \
-            -keystore /tmp/nhentai.keystore \
+            -keystore signing/nhentai.keystore \
             -alias nhentai \
-            -keyalg RSA -keysize 2048 -validity 10000 \
+            -keyalg RSA -keysize 2048 -validity 36500 \
             -storepass android -keypass android \
             -dname "CN=NHentai Extension, O=Android, C=US"
 
       - name: Build release APK
         env:
-          KEYSTORE_PATH: /tmp/nhentai.keystore
+          KEYSTORE_PATH: signing/nhentai.keystore
           KEYSTORE_PASS: android
           KEY_ALIAS: nhentai
           KEY_PASS: android
