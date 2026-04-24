@@ -104,7 +104,7 @@ class NHentai : HttpSource() {
     }
 
     override fun mangaDetailsParse(response: Response): SManga {
-        val gallery = json.decodeFromString<GalleryDto>(response.body.string())
+        val gallery = json.decodeFromString<GalleryDto>(response.body!!.string())
         return gallery.toSManga()
     }
 
@@ -114,7 +114,7 @@ class NHentai : HttpSource() {
     override fun chapterListRequest(manga: SManga): Request = mangaDetailsRequest(manga)
 
     override fun chapterListParse(response: Response): List<SChapter> {
-        val gallery = json.decodeFromString<GalleryDto>(response.body.string())
+        val gallery = json.decodeFromString<GalleryDto>(response.body!!.string())
         val chapter = SChapter.create().apply {
             name = "Chapter 1"
             url  = "/g/${gallery.id}/"
@@ -133,7 +133,7 @@ class NHentai : HttpSource() {
     }
 
     override fun pageListParse(response: Response): List<Page> {
-        val gallery = json.decodeFromString<GalleryDto>(response.body.string())
+        val gallery = json.decodeFromString<GalleryDto>(response.body!!.string())
         return gallery.images.pages.mapIndexed { index, image ->
             val ext = image.extension()
             Page(index, imageUrl = "$imgUrl/${gallery.mediaId}/${index + 1}.$ext")
@@ -145,15 +145,16 @@ class NHentai : HttpSource() {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun parseGalleryList(response: Response): MangasPage {
-        val list = json.decodeFromString<GalleryListDto>(response.body.string())
+        val list = json.decodeFromString<GalleryListDto>(response.body!!.string())
         val mangas = list.result.map { it.toSManga() }
         val hasMore = list.result.size >= list.perPage
         return MangasPage(mangas, hasMore)
     }
 
     private fun GalleryDto.toSManga(): SManga = SManga.create().apply {
-        url           = "/g/$id/"
-        title         = title.english.ifBlank { title.pretty.ifBlank { title.japanese } }
+        val t = this@toSManga.title
+        url   = "/g/$id/"
+        title = t.english.ifBlank { t.pretty.ifBlank { t.japanese } }
         thumbnail_url = "$thumbUrl/$mediaId/thumb.${images.thumbnail.extension()}"
 
         val tagsByType = tags.groupBy { it.type }
