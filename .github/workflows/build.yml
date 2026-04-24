@@ -1,0 +1,94 @@
+name: Build & Release NHentai Extension
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Download Gradle wrapper jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar \
+            "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar"
+          chmod +x ./gradlew
+
+      # Generate a placeholder icon so the build doesn't fail on missing resources
+      - name: Generate placeholder icon
+        run: |
+          sudo apt-get install -y imagemagick
+          for size in 48 72 96 108 144 192; do
+            case $size in
+              48)  density="mdpi";;
+              72)  density="hdpi";;
+              96)  density="xhdpi";;
+              108) density="xhdpi";;    # adaptive icon
+              144) density="xxhdpi";;
+              192) density="xxxhdpi";;
+            esac
+            mkdir -p src/en/nhentai/src/main/res/mipmap-${density}
+            convert -size ${size}x${size} xc:'#1a1a2e' \
+              -fill white -pointsize $((size/4)) -gravity Center \
+              -annotate 0 "NH" \
+              src/en/nhentai/src/main/res/mipmap-${density}/ic_launcher.png
+          done
+
+      - name: Build debug APK
+        run: ./gradlew :src:en:nhentai:assembleDebug --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhentai-extension-apk
+          path: src/en/nhentai/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      # Also create a GitHub Release so you get a permanent download link
+      - name: Get version code
+        id: version
+        run: echo "code=$(grep extVersionCode src/en/nhentai/build.gradle | grep -oP '\d+')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.4.${{ steps.version.outputs.code }}
+          name: "NHentai Extension v1.4.${{ steps.version.outputs.code }}"
+          body: |
+            ## NHentai Mihon Extension
+
+            ### Install on Android
+            1. Download the APK below
+            2. Open it on your phone (enable "Install unknown apps" for your browser/files app)
+            3. Open Mihon → Browse → Extensions → tap **NHentai**
+
+            > ⚠️ NSFW content — enable NSFW extensions in Mihon settings first:
+            > Mihon → Settings → Browse → Show NSFW sources
+          files: src/en/nhentai/build/outputs/apk/debug/*.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

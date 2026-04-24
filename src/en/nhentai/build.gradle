@@ -1,0 +1,9 @@
+apply from: "$rootDir/common.gradle"
+
+ext {
+    extName       = 'NHentai'
+    pkgNameSuffix = 'en.nhentai'
+    extClass      = '.NHentai'
+    extVersionCode = 1
+    isNsfw        = true
+}

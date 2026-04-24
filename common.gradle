@@ -1,0 +1,59 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlinx-serialization'
+
+assert extName        : "extName must be set"
+assert pkgNameSuffix  : "pkgNameSuffix must be set"
+assert extClass       : "extClass must be set"
+assert extVersionCode : "extVersionCode must be set"
+
+def libVersion = project.findProperty('libVersion') ?: rootProject.findProperty('libVersion') ?: '1.4'
+
+android {
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 26
+        targetSdk 34
+        applicationId "eu.kanade.tachiyomi.extension.${pkgNameSuffix}"
+        versionName "${libVersion}.${extVersionCode}"
+        versionCode extVersionCode
+
+        manifestPlaceholders = [
+            appName       : "Tachiyomi: ${extName}",
+            extClass      : extClass,
+            extFactory    : project.findProperty('extFactory') ?: '',
+            extVersionCode: extVersionCode,
+            containsNsfw  : project.findProperty('isNsfw') ?: false,
+        ]
+    }
+
+    namespace "eu.kanade.tachiyomi.extension.${pkgNameSuffix}"
+
+    sourceSets {
+        main {
+            manifest.srcFile "src/main/AndroidManifest.xml"
+            java.srcDirs = ['src/main/kotlin']
+            res.srcDirs = ['src/main/res']
+        }
+    }
+
+    buildFeatures { buildConfig = false }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
+    }
+}
+
+dependencies {
+    compileOnly 'com.github.mihonapp:extensions-lib:1.4'
+    compileOnly 'com.squareup.okhttp3:okhttp:4.12.0'
+    compileOnly 'org.jsoup:jsoup:1.17.2'
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
+}
