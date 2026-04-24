@@ -61,8 +61,6 @@ jobs:
           done
 
       - name: Build debug APK
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
         run: gradle :src:en:nhentai:assembleDebug --stacktrace
 
       - name: Upload APK artifact
