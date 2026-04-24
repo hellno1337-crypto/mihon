@@ -119,7 +119,7 @@ jobs:
 
           # index.min.json — extension list
           cat > repo/index.min.json << 'EOF'
-          [{"name":"NHentai","pkg":"eu.kanade.tachiyomi.extension.en.nhentai","apk":"tachiyomi-en.nhentai-v1.4.1.apk","lang":"en","code":1,"version":"1.4.1","nsfw":1,"sources":[{"name":"NHentai","lang":"en","id":2027447278861166336,"baseUrl":"https://nhentai.net","versionId":1}]}]
+          [{"name":"NHentai","pkg":"eu.kanade.tachiyomi.extension.en.nhentaix","apk":"tachiyomi-en.nhentai-v1.4.1.apk","lang":"en","code":1,"version":"1.4.1","nsfw":1,"sources":[{"name":"NHentai","lang":"en","id":2027447278861166336,"baseUrl":"https://nhentai.net","versionId":1}]}]
           EOF
           sed -i 's/^[[:space:]]*//' repo/index.min.json
 

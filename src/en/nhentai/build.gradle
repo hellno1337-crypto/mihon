@@ -1,8 +1,8 @@
 // Properties MUST be defined before common.gradle reads them
 ext {
     extName       = 'NHentai'
-    pkgNameSuffix = 'en.nhentai'
-    extClass      = '.NHentai'
+    pkgNameSuffix = 'en.nhentaix'
+    extClass      = 'eu.kanade.tachiyomi.extension.en.nhentai.NHentai'
     extVersionCode = 1
     isNsfw        = true
 }
