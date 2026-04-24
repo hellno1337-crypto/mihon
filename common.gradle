@@ -40,6 +40,22 @@ android {
 
     buildFeatures { buildConfig = false }
 
+    signingConfigs {
+        release {
+            storeFile     file(System.getenv("KEYSTORE_PATH") ?: "/tmp/nhentai.keystore")
+            storePassword System.getenv("KEYSTORE_PASS") ?: "android"
+            keyAlias      System.getenv("KEY_ALIAS")    ?: "nhentai"
+            keyPassword   System.getenv("KEY_PASS")     ?: "android"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11

@@ -72,15 +72,28 @@ jobs:
               src/en/nhentai/src/main/res/mipmap-${density}/ic_launcher.png
           done
 
-      - name: Build debug APK
-        run: gradle :src:en:nhentai:assembleDebug --stacktrace
+      - name: Generate signing keystore
+        run: |
+          keytool -genkey -v \
+            -keystore /tmp/nhentai.keystore \
+            -alias nhentai \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=NHentai Extension, O=Android, C=US"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PATH: /tmp/nhentai.keystore
+          KEYSTORE_PASS: android
+          KEY_ALIAS: nhentai
+          KEY_PASS: android
+        run: gradle :src:en:nhentai:assembleRelease --stacktrace
 
       - name: Rename APK and extract signing fingerprint
         run: |
           mkdir -p repo/apk repo/icon
-          cp src/en/nhentai/build/outputs/apk/debug/*.apk \
+          cp src/en/nhentai/build/outputs/apk/release/*.apk \
              repo/apk/tachiyomi-en.nhentai-v1.4.1.apk
-          # Extract SHA-256 fingerprint of the APK signing cert
           FINGERPRINT=$($ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify \
             --print-certs repo/apk/tachiyomi-en.nhentai-v1.4.1.apk \
             | grep "SHA-256" | head -1 | awk '{print $NF}' | tr -d ':')
