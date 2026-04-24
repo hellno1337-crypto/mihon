@@ -92,7 +92,7 @@ jobs:
 
       - name: Build release APK
         env:
-          KEYSTORE_PATH: signing/nhentai.keystore
+          KEYSTORE_PATH: ${{ github.workspace }}/signing/nhentai.keystore
           KEYSTORE_PASS: android
           KEY_ALIAS: nhentai
           KEY_PASS: android
