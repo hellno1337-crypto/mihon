@@ -47,7 +47,7 @@ jobs:
       - name: Pre-warm JitPack (extensions-lib)
         run: |
           STATUS=$(curl -sL -o /dev/null -w "%{http_code}" \
-            "https://jitpack.io/com/github/mihonapp/extensions-lib/1.6.0-rc1/extensions-lib-1.6.0-rc1.pom")
+            "https://jitpack.io/com/github/keiyoushi/extensions-lib/d81081f0f4/extensions-lib-d81081f0f4.pom")
           echo "JitPack status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             sleep 30
