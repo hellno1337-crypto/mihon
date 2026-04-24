@@ -74,38 +74,36 @@ jobs:
       - name: Build debug APK
         run: gradle :src:en:nhentai:assembleDebug --stacktrace
 
-      - name: Rename APK
+      - name: Rename APK and extract signing fingerprint
         run: |
           mkdir -p repo
           cp src/en/nhentai/build/outputs/apk/debug/*.apk \
              repo/tachiyomi-en.nhentai-v1.4.1.apk
+          # Extract SHA-256 fingerprint of the APK signing cert
+          FINGERPRINT=$($ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify \
+            --print-certs repo/tachiyomi-en.nhentai-v1.4.1.apk \
+            | grep "SHA-256" | head -1 | awk '{print $NF}')
+          echo "APK fingerprint: $FINGERPRINT"
+          echo "FINGERPRINT=$FINGERPRINT" >> $GITHUB_ENV
 
-      - name: Generate index.min.json
+      - name: Generate repo.json and index.min.json
         run: |
-          cat > repo/index.min.json << 'EOF'
-          [
-            {
-              "name": "NHentai",
-              "pkg": "eu.kanade.tachiyomi.extension.en.nhentai",
-              "apk": "tachiyomi-en.nhentai-v1.4.1.apk",
-              "lang": "en",
-              "code": 1,
-              "version": "1.4.1",
-              "nsfw": 1,
-              "sources": [
-                {
-                  "name": "NHentai",
-                  "lang": "en",
-                  "id": 2027447278861166336,
-                  "baseUrl": "https://nhentai.net",
-                  "versionId": 1
-                }
-              ]
-            }
-          ]
+          # repo.json — required by Mihon to validate the repo
+          cat > repo/repo.json << EOF
+          {"meta":{"name":"Mihon Extensions","shortName":"Mihon","website":"https://hellno1337-crypto.github.io/mihon","signingKeyFingerprint":"$FINGERPRINT"}}
           EOF
-          # Remove leading whitespace
+          sed -i 's/^[[:space:]]*//' repo/repo.json
+
+          # index.min.json — extension list
+          cat > repo/index.min.json << 'EOF'
+          [{"name":"NHentai","pkg":"eu.kanade.tachiyomi.extension.en.nhentai","apk":"tachiyomi-en.nhentai-v1.4.1.apk","lang":"en","code":1,"version":"1.4.1","nsfw":1,"sources":[{"name":"NHentai","lang":"en","id":2027447278861166336,"baseUrl":"https://nhentai.net","versionId":1}]}]
+          EOF
           sed -i 's/^[[:space:]]*//' repo/index.min.json
+
+          echo "repo.json:"
+          cat repo/repo.json
+          echo "index.min.json:"
+          cat repo/index.min.json
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
