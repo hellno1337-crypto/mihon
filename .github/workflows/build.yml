@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -44,12 +46,10 @@ jobs:
 
       - name: Pre-warm JitPack (extensions-lib)
         run: |
-          # Trigger JitPack to build the artifact if not already cached
           STATUS=$(curl -sL -o /dev/null -w "%{http_code}" \
             "https://jitpack.io/com/github/mihonapp/extensions-lib/1.6.0-rc1/extensions-lib-1.6.0-rc1.pom")
           echo "JitPack status: $STATUS"
           if [ "$STATUS" != "200" ]; then
-            echo "Waiting for JitPack to build extensions-lib..."
             sleep 30
           fi
 
@@ -74,31 +74,71 @@ jobs:
       - name: Build debug APK
         run: gradle :src:en:nhentai:assembleDebug --stacktrace
 
+      - name: Rename APK
+        run: |
+          mkdir -p repo
+          cp src/en/nhentai/build/outputs/apk/debug/*.apk \
+             repo/tachiyomi-en.nhentai-v1.4.1.apk
+
+      - name: Generate index.min.json
+        run: |
+          cat > repo/index.min.json << 'EOF'
+          [
+            {
+              "name": "NHentai",
+              "pkg": "eu.kanade.tachiyomi.extension.en.nhentai",
+              "apk": "tachiyomi-en.nhentai-v1.4.1.apk",
+              "lang": "en",
+              "code": 1,
+              "version": "1.4.1",
+              "nsfw": 1,
+              "sources": [
+                {
+                  "name": "NHentai",
+                  "lang": "en",
+                  "id": 2027447278861166336,
+                  "baseUrl": "https://nhentai.net",
+                  "versionId": 1
+                }
+              ]
+            }
+          ]
+          EOF
+          # Remove leading whitespace
+          sed -i 's/^[[:space:]]*//' repo/index.min.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo
+          force_orphan: true
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: nhentai-extension-apk
-          path: src/en/nhentai/build/outputs/apk/debug/*.apk
+          path: repo/tachiyomi-en.nhentai-v1.4.1.apk
           retention-days: 30
-
-      - name: Get version code
-        id: version
-        run: echo "code=$(grep extVersionCode src/en/nhentai/build.gradle | grep -oP '\d+')" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.4.${{ steps.version.outputs.code }}
-          name: "NHentai Extension v1.4.${{ steps.version.outputs.code }}"
+          tag_name: v1.4.1
+          name: "NHentai Extension v1.4.1"
           body: |
             ## NHentai Mihon Extension
 
-            ### Install on Android
-            1. Download the APK below
-            2. Open it on your phone and tap Install
-            3. Open Mihon → Settings → Browse → enable **Show NSFW sources**
-            4. Browse → Extensions → NHentai
-          files: src/en/nhentai/build/outputs/apk/debug/*.apk
+            ### Easy install via Mihon repo URL
+            1. Open Mihon → Settings → Browse → Extension repos
+            2. Add: `https://hellno1337-crypto.github.io/nhentai-mihon-ext`
+            3. Browse → Extensions → find NHentai → Install
+
+            ### Or direct APK install
+            Download the APK below and open it on your phone.
+
+            > Enable NSFW sources: Mihon → Settings → Browse → Show NSFW sources
+          files: repo/tachiyomi-en.nhentai-v1.4.1.apk
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
