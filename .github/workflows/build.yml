@@ -131,7 +131,7 @@ jobs:
 
             ### Easy install via Mihon repo URL
             1. Open Mihon → Settings → Browse → Extension repos
-            2. Add: `https://hellno1337-crypto.github.io/nhentai-mihon-ext`
+            2. Add: `https://hellno1337-crypto.github.io/mihon`
             3. Browse → Extensions → find NHentai → Install
 
             ### Or direct APK install
