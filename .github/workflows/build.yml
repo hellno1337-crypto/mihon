@@ -77,23 +77,27 @@ jobs:
               src/en/nhentai/src/main/res/mipmap-${density}/ic_launcher.png
           done
 
-      - name: Restore signing keystore from cache
-        id: keystore-cache
-        uses: actions/cache@v4
-        with:
-          path: signing/nhentai.keystore
-          key: nhentai-signing-keystore-stable-v1
-
-      - name: Generate signing keystore if not cached
-        if: steps.keystore-cache.outputs.cache-hit != 'true'
+      - name: Setup stable signing keystore
         run: |
           mkdir -p signing
-          keytool -genkey -v \
-            -keystore signing/nhentai.keystore \
-            -alias nhentai \
-            -keyalg RSA -keysize 2048 -validity 36500 \
-            -storepass android -keypass android \
-            -dname "CN=NHentai Extension, O=Android, C=US"
+          if [ -f signing/keystore.b64 ]; then
+            echo "Using existing keystore from repo"
+            base64 -d signing/keystore.b64 > signing/nhentai.keystore
+          else
+            echo "Generating new keystore and saving to repo"
+            keytool -genkey -v \
+              -keystore signing/nhentai.keystore \
+              -alias nhentai \
+              -keyalg RSA -keysize 2048 -validity 36500 \
+              -storepass android -keypass android \
+              -dname "CN=NHentai Extension, O=Android, C=US"
+            base64 signing/nhentai.keystore > signing/keystore.b64
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add signing/keystore.b64
+            git commit -m "Add stable signing keystore [skip ci]"
+            git push
+          fi
 
       - name: Build release APK
         env:
