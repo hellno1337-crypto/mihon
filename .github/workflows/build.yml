@@ -54,7 +54,7 @@ jobs:
             sleep 30
           fi
 
-      - name: Generate placeholder icon
+      - name: Generate nhentai icon
         run: |
           sudo apt-get install -y imagemagick
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
@@ -66,9 +66,14 @@ jobs:
               xxxhdpi) size=192;;
             esac
             mkdir -p src/en/nhentai/src/main/res/mipmap-${density}
-            convert -size ${size}x${size} xc:'#1a1a2e' \
-              -fill white -pointsize $((size/4)) -gravity Center \
-              -annotate 0 "NH" \
+            half=$((size/2))
+            font=$((size*45/100))
+            convert -size ${size}x${size} xc:'#111827' \
+              -fill '#ec4899' \
+              -draw "circle $((size/2)),$((size/2)) $((size/2)),1" \
+              -fill white -font DejaVu-Sans-Bold \
+              -pointsize ${font} -gravity Center \
+              -annotate 0 "n" \
               src/en/nhentai/src/main/res/mipmap-${density}/ic_launcher.png
           done
 

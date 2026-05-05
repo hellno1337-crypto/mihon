@@ -46,6 +46,8 @@ android {
             storePassword System.getenv("KEYSTORE_PASS") ?: "android"
             keyAlias      System.getenv("KEY_ALIAS")    ?: "nhentai"
             keyPassword   System.getenv("KEY_PASS")     ?: "android"
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
 
